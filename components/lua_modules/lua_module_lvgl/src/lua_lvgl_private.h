@@ -33,6 +33,7 @@
 #define LUA_MODULE_LVGL_DEFAULT_TASK_PERIOD_MS 10
 #define LUA_MODULE_LVGL_TASK_STACK 8192
 #define LUA_MODULE_LVGL_TASK_PRIO 5
+#define LUA_MODULE_LVGL_TASK_STOP_TIMEOUT_MS 5000
 #define LUA_MODULE_LVGL_PANEL_IF_IO 0
 #define LUA_MODULE_LVGL_PANEL_IF_RGB 1
 #define LUA_MODULE_LVGL_PANEL_IF_MIPI_DSI 2
@@ -60,6 +61,27 @@ typedef enum {
     LUA_LVGL_OBJ_LIST_BUTTON,
     LUA_LVGL_OBJ_TEXTAREA,
     LUA_LVGL_OBJ_TABLE,
+    LUA_LVGL_OBJ_BUTTONMATRIX,
+    LUA_LVGL_OBJ_CALENDAR,
+    LUA_LVGL_OBJ_CANVAS,
+    LUA_LVGL_OBJ_CHART,
+    LUA_LVGL_OBJ_IMAGEBUTTON,
+    LUA_LVGL_OBJ_LED,
+    LUA_LVGL_OBJ_MENU,
+    LUA_LVGL_OBJ_MENU_PAGE,
+    LUA_LVGL_OBJ_MENU_CONT,
+    LUA_LVGL_OBJ_MENU_SECTION,
+    LUA_LVGL_OBJ_MENU_SEPARATOR,
+    LUA_LVGL_OBJ_MSGBOX,
+    LUA_LVGL_OBJ_MSGBOX_CHILD,
+    LUA_LVGL_OBJ_SPANGROUP,
+    LUA_LVGL_OBJ_SPINBOX,
+    LUA_LVGL_OBJ_TABVIEW,
+    LUA_LVGL_OBJ_TAB_PAGE,
+    LUA_LVGL_OBJ_TILEVIEW,
+    LUA_LVGL_OBJ_TILE,
+    LUA_LVGL_OBJ_WINDOW,
+    LUA_LVGL_OBJ_WINDOW_CHILD,
 } lua_lvgl_obj_type_t;
 
 /* Forward declaration so lua_lvgl_event_sub_t can hold a back-pointer to
@@ -100,6 +122,12 @@ typedef struct lua_lvgl_obj_record {
     uint32_t line_point_count;
     int32_t *grid_cols;
     int32_t *grid_rows;
+    char **string_array;
+    size_t string_array_count;
+    void *data;
+    void *data2;
+    size_t data_size;
+    size_t data2_size;
     int value_cache;
     uint32_t generation;
     lua_lvgl_obj_type_t type;
@@ -220,6 +248,80 @@ int lua_lvgl_list_add_button(lua_State *L);
 int lua_lvgl_table_set_cell(lua_State *L);
 int lua_lvgl_table_get_cell(lua_State *L);
 
+/* lua_lvgl_complex_widgets.c */
+int lua_lvgl_buttonmatrix_set_map(lua_State *L);
+int lua_lvgl_buttonmatrix_set_selected(lua_State *L);
+int lua_lvgl_buttonmatrix_get_selected(lua_State *L);
+int lua_lvgl_buttonmatrix_get_button_text(lua_State *L);
+int lua_lvgl_buttonmatrix_set_one_checked(lua_State *L);
+int lua_lvgl_calendar_set_today(lua_State *L);
+int lua_lvgl_calendar_set_shown(lua_State *L);
+int lua_lvgl_calendar_set_highlighted(lua_State *L);
+int lua_lvgl_calendar_get_pressed_date(lua_State *L);
+int lua_lvgl_canvas_fill_bg(lua_State *L);
+int lua_lvgl_canvas_set_px(lua_State *L);
+int lua_lvgl_canvas_get_px(lua_State *L);
+int lua_lvgl_chart_add_series(lua_State *L);
+int lua_lvgl_chart_set_type(lua_State *L);
+int lua_lvgl_chart_set_point_count(lua_State *L);
+int lua_lvgl_chart_set_range(lua_State *L);
+int lua_lvgl_chart_set_next_value(lua_State *L);
+int lua_lvgl_chart_set_series_values(lua_State *L);
+int lua_lvgl_chart_refresh(lua_State *L);
+int lua_lvgl_imagebutton_set_src(lua_State *L);
+int lua_lvgl_imagebutton_set_state(lua_State *L);
+int lua_lvgl_led_set_color(lua_State *L);
+int lua_lvgl_led_set_brightness(lua_State *L);
+int lua_lvgl_led_get_brightness(lua_State *L);
+int lua_lvgl_led_on(lua_State *L);
+int lua_lvgl_led_off(lua_State *L);
+int lua_lvgl_led_toggle(lua_State *L);
+int lua_lvgl_menu_page(lua_State *L);
+int lua_lvgl_menu_cont(lua_State *L);
+int lua_lvgl_menu_section(lua_State *L);
+int lua_lvgl_menu_separator(lua_State *L);
+int lua_lvgl_menu_set_page(lua_State *L);
+int lua_lvgl_menu_set_sidebar_page(lua_State *L);
+int lua_lvgl_menu_set_mode_header(lua_State *L);
+int lua_lvgl_menu_set_root_back_button(lua_State *L);
+int lua_lvgl_menu_clear_history(lua_State *L);
+int lua_lvgl_msgbox_add_title(lua_State *L);
+int lua_lvgl_msgbox_add_text(lua_State *L);
+int lua_lvgl_msgbox_add_footer_button(lua_State *L);
+int lua_lvgl_msgbox_add_close_button(lua_State *L);
+int lua_lvgl_msgbox_close(lua_State *L);
+int lua_lvgl_msgbox_close_async(lua_State *L);
+int lua_lvgl_spangroup_add_span(lua_State *L);
+int lua_lvgl_spangroup_get_span_count(lua_State *L);
+int lua_lvgl_spangroup_refresh(lua_State *L);
+int lua_lvgl_spinbox_set_step(lua_State *L);
+int lua_lvgl_spinbox_get_step(lua_State *L);
+int lua_lvgl_spinbox_increment(lua_State *L);
+int lua_lvgl_spinbox_decrement(lua_State *L);
+int lua_lvgl_spinbox_step_next(lua_State *L);
+int lua_lvgl_spinbox_step_prev(lua_State *L);
+int lua_lvgl_tabview_add_tab(lua_State *L);
+int lua_lvgl_tabview_set_active(lua_State *L);
+int lua_lvgl_tabview_get_active(lua_State *L);
+int lua_lvgl_tabview_get_tab_count(lua_State *L);
+int lua_lvgl_tabview_set_tab_text(lua_State *L);
+int lua_lvgl_tileview_add_tile(lua_State *L);
+int lua_lvgl_tileview_set_tile(lua_State *L);
+int lua_lvgl_tileview_set_tile_by_index(lua_State *L);
+int lua_lvgl_tileview_get_active_tile(lua_State *L);
+int lua_lvgl_window_add_title(lua_State *L);
+int lua_lvgl_window_add_button(lua_State *L);
+int lua_lvgl_window_get_header(lua_State *L);
+int lua_lvgl_window_get_content(lua_State *L);
+int lua_lvgl_span_set_text(lua_State *L);
+int lua_lvgl_span_get_text(lua_State *L);
+int lua_lvgl_span_set_style(lua_State *L);
+int lua_lvgl_span_delete(lua_State *L);
+int lua_lvgl_span_gc(lua_State *L);
+int lua_lvgl_chart_series_gc(lua_State *L);
+void lua_lvgl_register_handle_metatables(lua_State *L);
+void lua_lvgl_apply_complex_widget_opts(lua_State *L, lua_lvgl_obj_ud_t *ud, lua_lvgl_obj_type_t type);
+
 /* lua_lvgl_events.c */
 int lua_lvgl_obj_on(lua_State *L);
 int lua_lvgl_obj_off(lua_State *L);
@@ -270,8 +372,10 @@ int lua_lvgl_create_widget(lua_State *L, lua_lvgl_obj_type_t type);
 extern const luaL_Reg lua_lvgl_runtime_funcs[];
 extern const luaL_Reg lua_lvgl_core_widget_funcs[];
 extern const luaL_Reg lua_lvgl_extra_widget_funcs[];
+extern const luaL_Reg lua_lvgl_complex_widget_funcs[];
 extern const luaL_Reg lua_lvgl_event_module_funcs[];
 extern const luaL_Reg lua_lvgl_indev_module_funcs[];
+extern const luaL_Reg lua_lvgl_demo_module_funcs[];
 
 /* lua_lvgl_indev.c: tear down all currently registered indevs.
  * Caller must hold lua_lvgl_lock() and the LVGL task must already be

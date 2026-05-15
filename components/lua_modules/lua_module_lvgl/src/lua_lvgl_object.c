@@ -45,6 +45,20 @@ void lua_lvgl_record_release_resources(lua_lvgl_obj_record_t *record)
     record->grid_cols = NULL;
     free(record->grid_rows);
     record->grid_rows = NULL;
+    if (record->string_array) {
+        for (size_t i = 0; i < record->string_array_count; i++) {
+            free(record->string_array[i]);
+        }
+        free(record->string_array);
+        record->string_array = NULL;
+        record->string_array_count = 0;
+    }
+    free(record->data);
+    record->data = NULL;
+    record->data_size = 0;
+    free(record->data2);
+    record->data2 = NULL;
+    record->data2_size = 0;
     record->aux_obj = NULL;
 }
 

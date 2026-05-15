@@ -146,6 +146,125 @@ static const luaL_Reg lua_lvgl_table_methods[] = {
     {NULL, NULL},
 };
 
+static const luaL_Reg lua_lvgl_buttonmatrix_methods[] = {
+    {"set_map", lua_lvgl_buttonmatrix_set_map},
+    {"set_selected", lua_lvgl_buttonmatrix_set_selected},
+    {"get_selected", lua_lvgl_buttonmatrix_get_selected},
+    {"get_button_text", lua_lvgl_buttonmatrix_get_button_text},
+    {"set_one_checked", lua_lvgl_buttonmatrix_set_one_checked},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_calendar_methods[] = {
+    {"set_today", lua_lvgl_calendar_set_today},
+    {"set_shown", lua_lvgl_calendar_set_shown},
+    {"set_highlighted", lua_lvgl_calendar_set_highlighted},
+    {"get_pressed_date", lua_lvgl_calendar_get_pressed_date},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_canvas_methods[] = {
+    {"fill_bg", lua_lvgl_canvas_fill_bg},
+    {"set_px", lua_lvgl_canvas_set_px},
+    {"get_px", lua_lvgl_canvas_get_px},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_chart_methods[] = {
+    {"add_series", lua_lvgl_chart_add_series},
+    {"set_type", lua_lvgl_chart_set_type},
+    {"set_point_count", lua_lvgl_chart_set_point_count},
+    {"set_range", lua_lvgl_chart_set_range},
+    {"set_next_value", lua_lvgl_chart_set_next_value},
+    {"set_series_values", lua_lvgl_chart_set_series_values},
+    {"refresh", lua_lvgl_chart_refresh},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_imagebutton_methods[] = {
+    {"set_src", lua_lvgl_imagebutton_set_src},
+    {"set_state", lua_lvgl_imagebutton_set_state},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_led_methods[] = {
+    {"set_color", lua_lvgl_led_set_color},
+    {"set_brightness", lua_lvgl_led_set_brightness},
+    {"get_brightness", lua_lvgl_led_get_brightness},
+    {"on", lua_lvgl_led_on},
+    {"off", lua_lvgl_led_off},
+    {"toggle", lua_lvgl_led_toggle},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_menu_methods[] = {
+    {"page", lua_lvgl_menu_page},
+    {"cont", lua_lvgl_menu_cont},
+    {"section", lua_lvgl_menu_section},
+    {"separator", lua_lvgl_menu_separator},
+    {"set_page", lua_lvgl_menu_set_page},
+    {"set_sidebar_page", lua_lvgl_menu_set_sidebar_page},
+    {"set_mode_header", lua_lvgl_menu_set_mode_header},
+    {"set_root_back_button", lua_lvgl_menu_set_root_back_button},
+    {"clear_history", lua_lvgl_menu_clear_history},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_msgbox_methods[] = {
+    {"add_title", lua_lvgl_msgbox_add_title},
+    {"add_text", lua_lvgl_msgbox_add_text},
+    {"add_footer_button", lua_lvgl_msgbox_add_footer_button},
+    {"add_close_button", lua_lvgl_msgbox_add_close_button},
+    {"close", lua_lvgl_msgbox_close},
+    {"close_async", lua_lvgl_msgbox_close_async},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_spangroup_methods[] = {
+    {"add_span", lua_lvgl_spangroup_add_span},
+    {"get_span_count", lua_lvgl_spangroup_get_span_count},
+    {"refresh", lua_lvgl_spangroup_refresh},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_spinbox_methods[] = {
+    {"set_value", lua_lvgl_set_value},
+    {"get_value", lua_lvgl_get_value},
+    {"set_range", lua_lvgl_set_range},
+    {"set_step", lua_lvgl_spinbox_set_step},
+    {"get_step", lua_lvgl_spinbox_get_step},
+    {"increment", lua_lvgl_spinbox_increment},
+    {"decrement", lua_lvgl_spinbox_decrement},
+    {"step_next", lua_lvgl_spinbox_step_next},
+    {"step_prev", lua_lvgl_spinbox_step_prev},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_tabview_methods[] = {
+    {"add_tab", lua_lvgl_tabview_add_tab},
+    {"set_active", lua_lvgl_tabview_set_active},
+    {"get_active", lua_lvgl_tabview_get_active},
+    {"get_tab_count", lua_lvgl_tabview_get_tab_count},
+    {"set_tab_text", lua_lvgl_tabview_set_tab_text},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_tileview_methods[] = {
+    {"add_tile", lua_lvgl_tileview_add_tile},
+    {"set_tile", lua_lvgl_tileview_set_tile},
+    {"set_tile_by_index", lua_lvgl_tileview_set_tile_by_index},
+    {"get_active_tile", lua_lvgl_tileview_get_active_tile},
+    {NULL, NULL},
+};
+
+static const luaL_Reg lua_lvgl_window_methods[] = {
+    {"add_title", lua_lvgl_window_add_title},
+    {"add_button", lua_lvgl_window_add_button},
+    {"get_header", lua_lvgl_window_get_header},
+    {"get_content", lua_lvgl_window_get_content},
+    {NULL, NULL},
+};
+
 /* image / line / spinner / keyboard / generic / container expose the base
  * method set only; an empty per-type extra table is enough. */
 static const luaL_Reg lua_lvgl_no_extra_methods[] = {
@@ -183,6 +302,27 @@ static const lua_lvgl_widget_descriptor_t s_widget_descriptors[] = {
     {LUA_LVGL_OBJ_LIST_BUTTON, "lvgl.obj.list_button", lua_lvgl_list_button_methods},
     {LUA_LVGL_OBJ_TEXTAREA,    "lvgl.obj.textarea",    lua_lvgl_textarea_methods},
     {LUA_LVGL_OBJ_TABLE,       "lvgl.obj.table",       lua_lvgl_table_methods},
+    {LUA_LVGL_OBJ_BUTTONMATRIX, "lvgl.obj.buttonmatrix", lua_lvgl_buttonmatrix_methods},
+    {LUA_LVGL_OBJ_CALENDAR,    "lvgl.obj.calendar",    lua_lvgl_calendar_methods},
+    {LUA_LVGL_OBJ_CANVAS,      "lvgl.obj.canvas",      lua_lvgl_canvas_methods},
+    {LUA_LVGL_OBJ_CHART,       "lvgl.obj.chart",       lua_lvgl_chart_methods},
+    {LUA_LVGL_OBJ_IMAGEBUTTON, "lvgl.obj.imagebutton", lua_lvgl_imagebutton_methods},
+    {LUA_LVGL_OBJ_LED,         "lvgl.obj.led",         lua_lvgl_led_methods},
+    {LUA_LVGL_OBJ_MENU,        "lvgl.obj.menu",        lua_lvgl_menu_methods},
+    {LUA_LVGL_OBJ_MENU_PAGE,   "lvgl.obj.menu_page",   lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_MENU_CONT,   "lvgl.obj.menu_cont",   lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_MENU_SECTION, "lvgl.obj.menu_section", lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_MENU_SEPARATOR, "lvgl.obj.menu_separator", lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_MSGBOX,      "lvgl.obj.msgbox",      lua_lvgl_msgbox_methods},
+    {LUA_LVGL_OBJ_MSGBOX_CHILD, "lvgl.obj.msgbox_child", lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_SPANGROUP,   "lvgl.obj.spangroup",   lua_lvgl_spangroup_methods},
+    {LUA_LVGL_OBJ_SPINBOX,     "lvgl.obj.spinbox",     lua_lvgl_spinbox_methods},
+    {LUA_LVGL_OBJ_TABVIEW,     "lvgl.obj.tabview",     lua_lvgl_tabview_methods},
+    {LUA_LVGL_OBJ_TAB_PAGE,    "lvgl.obj.tab_page",    lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_TILEVIEW,    "lvgl.obj.tileview",    lua_lvgl_tileview_methods},
+    {LUA_LVGL_OBJ_TILE,        "lvgl.obj.tile",        lua_lvgl_no_extra_methods},
+    {LUA_LVGL_OBJ_WINDOW,      "lvgl.obj.window",      lua_lvgl_window_methods},
+    {LUA_LVGL_OBJ_WINDOW_CHILD, "lvgl.obj.window_child", lua_lvgl_no_extra_methods},
 };
 
 #define LUA_LVGL_WIDGET_DESCRIPTOR_COUNT \
@@ -252,6 +392,8 @@ static void lua_lvgl_register_one_metatable(lua_State *L,
 void lua_lvgl_register_metatables(lua_State *L)
 {
     int base_idx;
+
+    lua_lvgl_register_handle_metatables(L);
 
     /* Build the base methods table once and keep it on the stack while we
      * register every per-type metatable so each can reference the same

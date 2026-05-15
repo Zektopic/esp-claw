@@ -6,7 +6,7 @@ local panel_handle, io_handle, width, height, panel_if =
     board_manager.get_display_lcd_params("display_lcd")
 
 lvgl.init(panel_handle, io_handle, width, height, panel_if, {
-    buffer_lines = 40,
+    buffer_lines = 10,
     tick_ms = 5,
     task_period_ms = 10,
 })

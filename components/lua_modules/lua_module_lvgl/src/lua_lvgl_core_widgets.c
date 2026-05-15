@@ -177,6 +177,71 @@ int lua_lvgl_create_widget(lua_State *L, lua_lvgl_obj_type_t type)
     case LUA_LVGL_OBJ_TABLE:
         obj = lv_table_create(parent);
         break;
+#if LV_USE_BUTTONMATRIX
+    case LUA_LVGL_OBJ_BUTTONMATRIX:
+        obj = lv_buttonmatrix_create(parent);
+        break;
+#endif
+#if LV_USE_CALENDAR
+    case LUA_LVGL_OBJ_CALENDAR:
+        obj = lv_calendar_create(parent);
+        break;
+#endif
+#if LV_USE_CANVAS
+    case LUA_LVGL_OBJ_CANVAS:
+        obj = lv_canvas_create(parent);
+        break;
+#endif
+#if LV_USE_CHART
+    case LUA_LVGL_OBJ_CHART:
+        obj = lv_chart_create(parent);
+        break;
+#endif
+#if LV_USE_IMAGEBUTTON
+    case LUA_LVGL_OBJ_IMAGEBUTTON:
+        obj = lv_imagebutton_create(parent);
+        break;
+#endif
+#if LV_USE_LED
+    case LUA_LVGL_OBJ_LED:
+        obj = lv_led_create(parent);
+        break;
+#endif
+#if LV_USE_MENU
+    case LUA_LVGL_OBJ_MENU:
+        obj = lv_menu_create(parent);
+        break;
+#endif
+#if LV_USE_MSGBOX
+    case LUA_LVGL_OBJ_MSGBOX:
+        obj = lv_msgbox_create(parent);
+        break;
+#endif
+#if LV_USE_SPAN
+    case LUA_LVGL_OBJ_SPANGROUP:
+        obj = lv_spangroup_create(parent);
+        break;
+#endif
+#if LV_USE_SPINBOX
+    case LUA_LVGL_OBJ_SPINBOX:
+        obj = lv_spinbox_create(parent);
+        break;
+#endif
+#if LV_USE_TABVIEW
+    case LUA_LVGL_OBJ_TABVIEW:
+        obj = lv_tabview_create(parent);
+        break;
+#endif
+#if LV_USE_TILEVIEW
+    case LUA_LVGL_OBJ_TILEVIEW:
+        obj = lv_tileview_create(parent);
+        break;
+#endif
+#if LV_USE_WIN
+    case LUA_LVGL_OBJ_WINDOW:
+        obj = lv_win_create(parent);
+        break;
+#endif
     default:
         obj = lv_obj_create(parent);
         break;
@@ -446,6 +511,9 @@ int lua_lvgl_create_widget(lua_State *L, lua_lvgl_obj_type_t type)
         if (type == LUA_LVGL_OBJ_BUTTON) {
             created_ud->record->aux_obj = lv_obj_get_child(obj, 0);
         }
+    }
+    if (opts.has_opts) {
+        lua_lvgl_apply_complex_widget_opts(L, created_ud, type);
     }
     free(options);
     lua_lvgl_unlock();

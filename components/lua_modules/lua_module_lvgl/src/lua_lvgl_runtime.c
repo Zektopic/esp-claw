@@ -117,6 +117,20 @@ static void lua_lvgl_wait_flush_done(void)
     }
 }
 
+static bool lua_lvgl_panel_requires_color_swap(const lua_lvgl_state_t *state)
+{
+    return state && state->panel_if == LUA_MODULE_LVGL_PANEL_IF_IO;
+}
+
+static void lua_lvgl_bswap16_in_place(uint8_t *px_map, size_t pixel_count)
+{
+    uint16_t *pixels = (uint16_t *)px_map;
+
+    for (size_t i = 0; i < pixel_count; i++) {
+        pixels[i] = __builtin_bswap16(pixels[i]);
+    }
+}
+
 static void lua_lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
     lua_lvgl_state_t *state = (lua_lvgl_state_t *)lv_display_get_user_data(display);
@@ -125,6 +139,11 @@ static void lua_lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint
                                state->flush_callbacks_registered;
 
     if (state && state->panel) {
+        if (lua_lvgl_panel_requires_color_swap(state)) {
+            size_t pixel_count = (size_t)(area->x2 - area->x1 + 1) *
+                                 (size_t)(area->y2 - area->y1 + 1);
+            lua_lvgl_bswap16_in_place(px_map, pixel_count);
+        }
         if (wait_for_flush_done) {
             while (state->flush_done && xSemaphoreTake(state->flush_done, 0) == pdTRUE) {
             }
@@ -178,20 +197,39 @@ static void lua_lvgl_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void lua_lvgl_stop_task(void)
+static esp_err_t lua_lvgl_stop_task(void)
 {
     TaskHandle_t task = s_lvgl.task_handle;
 
     if (!task) {
-        return;
+        return ESP_OK;
     }
     s_lvgl.task_waiter = xTaskGetCurrentTaskHandle();
     s_lvgl.task_stop = true;
-    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0) {
+    if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(LUA_MODULE_LVGL_TASK_STOP_TIMEOUT_MS)) == 0) {
         ESP_LOGW(TAG, "lvgl task stop timeout");
+        s_lvgl.task_waiter = NULL;
+        return ESP_ERR_TIMEOUT;
     }
     s_lvgl.task_waiter = NULL;
     s_lvgl.task_handle = NULL;
+    return ESP_OK;
+}
+
+static esp_err_t lua_lvgl_quiesce_runtime(void)
+{
+    esp_err_t err = lua_lvgl_lock();
+
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (s_lvgl.runtime_initialized) {
+        s_lvgl.runtime_initialized = false;
+        lua_lvgl_indev_release_locked();
+        lv_anim_delete_all();
+    }
+    lua_lvgl_unlock();
+    return ESP_OK;
 }
 
 static void lua_lvgl_drain_event_queue_locked(void)
@@ -263,6 +301,11 @@ esp_err_t lua_lvgl_deinit_runtime(void)
     esp_timer_handle_t timer = s_lvgl.tick_timer;
     esp_err_t err;
 
+    err = lua_lvgl_quiesce_runtime();
+    if (err != ESP_OK) {
+        return err;
+    }
+
     if (timer) {
         (void)esp_timer_stop(timer);
         (void)esp_timer_delete(timer);
@@ -270,7 +313,10 @@ esp_err_t lua_lvgl_deinit_runtime(void)
     }
 
     if (s_lvgl.task_handle) {
-        lua_lvgl_stop_task();
+        err = lua_lvgl_stop_task();
+        if (err != ESP_OK) {
+            return err;
+        }
     }
     lua_lvgl_wait_flush_done();
 

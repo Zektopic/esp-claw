@@ -159,6 +159,9 @@ int lua_lvgl_get_value(lua_State *L)
     case LUA_LVGL_OBJ_SWITCH:
         lua_pushboolean(L, lv_obj_has_state(obj, LV_STATE_CHECKED));
         break;
+    case LUA_LVGL_OBJ_SPINBOX:
+        lua_pushinteger(L, lv_spinbox_get_value(obj));
+        break;
     default:
         lua_lvgl_unlock();
         return luaL_error(L, "lvgl get_value does not support this object type");
@@ -216,6 +219,9 @@ int lua_lvgl_set_value(lua_State *L)
             lv_obj_remove_state(obj, LV_STATE_CHECKED);
         }
         break;
+    case LUA_LVGL_OBJ_SPINBOX:
+        lv_spinbox_set_value(obj, (int32_t)luaL_checkinteger(L, 2));
+        break;
     default:
         lua_lvgl_unlock();
         return luaL_error(L, "lvgl set_value does not support this object type");
@@ -257,6 +263,9 @@ int lua_lvgl_set_range(lua_State *L)
         break;
     case LUA_LVGL_OBJ_SCALE:
         lv_scale_set_range(obj, min_value, max_value);
+        break;
+    case LUA_LVGL_OBJ_SPINBOX:
+        lv_spinbox_set_range(obj, min_value, max_value);
         break;
     default:
         lua_lvgl_unlock();

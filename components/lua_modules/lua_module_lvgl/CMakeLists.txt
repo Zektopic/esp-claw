@@ -2,6 +2,8 @@ idf_component_register(
     SRCS
         "src/lua_module_lvgl.c"
         "src/lua_lvgl_core_widgets.c"
+        "src/lua_lvgl_complex_widgets.c"
+        "src/lua_lvgl_demos.c"
         "src/lua_lvgl_events.c"
         "src/lua_lvgl_extra_widgets.c"
         "src/lua_lvgl_indev.c"

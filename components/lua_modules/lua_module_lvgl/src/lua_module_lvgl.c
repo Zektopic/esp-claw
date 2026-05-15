@@ -29,8 +29,10 @@ int luaopen_lvgl(lua_State *L)
     lua_lvgl_register_funcs(L, lua_lvgl_runtime_funcs);
     lua_lvgl_register_funcs(L, lua_lvgl_core_widget_funcs);
     lua_lvgl_register_funcs(L, lua_lvgl_extra_widget_funcs);
+    lua_lvgl_register_funcs(L, lua_lvgl_complex_widget_funcs);
     lua_lvgl_register_funcs(L, lua_lvgl_event_module_funcs);
     lua_lvgl_register_funcs(L, lua_lvgl_indev_module_funcs);
+    lua_lvgl_register_funcs(L, lua_lvgl_demo_module_funcs);
 
     lua_pushinteger(L, LUA_MODULE_LVGL_PANEL_IF_IO);
     lua_setfield(L, -2, "PANEL_IF_IO");

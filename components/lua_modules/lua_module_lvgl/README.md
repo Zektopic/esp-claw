@@ -1,71 +1,23 @@
-# Lua LVGL
+# Lua LVGL Usage Guide
 
-This module exposes a small LVGL runtime to Lua scripts.
+This document is written for LLMs and Lua script generation. It explains how
+to use the `lvgl` module exposed by `components/lua_modules/lua_module_lvgl`.
 
-`lvgl` can:
-- Initialize LVGL on an existing `esp_lcd` panel handle
-- Create screens, containers, and a P1 set of LVGL widgets
-- Update widget position, size, text, value, style, and layout via methods
-- Subscribe to LVGL widget events (`obj:on / obj:off`) and dispatch them on
-  the script task via `lvgl.process_events / lvgl.run`
-- Bind a touch panel as an LVGL pointer indev via `lvgl.indev_register("touch", ...)`
-- Deinitialize the LVGL runtime and release display ownership
+## Core Rules
 
-## How to call
+- Import the module with `local lvgl = require("lvgl")`.
+- Get display parameters with `board_manager.get_display_lcd_params("display_lcd")`, then call `lvgl.init(...)`.
+- All widget operations are userdata methods. Use `btn:set_text("OK")`, not `lvgl.set_text(btn, "OK")`.
+- Only one Lua script can own the LVGL runtime at a time. Do not use `display.init(...)` and `lvgl.init(...)` together.
+- Call `lvgl.deinit()` before the script exits. The module also cleans up automatically if the owner script exits unexpectedly.
+- Object handles become invalid after `obj:delete()`, after a parent object is deleted, or after `lvgl.deinit()`.
+- After registering events, call `lvgl.run()` or repeatedly call `lvgl.process_events(...)`; otherwise Lua callbacks will not run.
 
-- Import it with `local lvgl = require("lvgl")`
-- Get LCD parameters from `board_manager.get_display_lcd_params(...)` or `lcd.new(...)`
-- Call `lvgl.init(panel_handle, io_handle, width, height, panel_if, options)`
-- Create a screen with `lvgl.create_screen()` or use `lvgl.screen()`
-- Create widgets with `lvgl.label(...)`, `lvgl.button(...)`, `lvgl.bar(...)`,
-  `lvgl.slider(...)`, `lvgl.dropdown(...)`, `lvgl.table(...)`, and other P1 constructors
-- Operate on widgets via methods: `obj:set_text(...)`, `obj:set_value(...)`,
-  `obj:align(...)`, `obj:set_style(...)`, etc.
-- Call `lvgl.deinit()` when finished
-
-## Important rules
-
-- **LVGL is a single-script subsystem.** Only one Lua script may drive LVGL
-  at a time. See [RFC-single-script-ui.md](RFC-single-script-ui.md) for the
-  full rationale and roadmap. Other capabilities must talk to the UI script
-  via events (for example through `event_publisher`) instead of calling
-  `lvgl.*` directly.
-- `lvgl` uses the same display ownership path as the `display` module.
-- Do not use `display.init(...)` and `lvgl.init(...)` at the same time.
-- The module owns a single LVGL display runtime at a time.
-- The Lua script that successfully calls `lvgl.init(...)` owns the LVGL runtime.
-- When that owner script exits, the module automatically deinitializes LVGL,
-  stops the LVGL task and tick timer, frees the draw buffer, and releases
-  display ownership. Calling `lvgl.deinit()` explicitly is still recommended
-  when the script is done with the UI.
-- `lvgl.init(...)` raises an error if LVGL is already initialized.
-- Lua object handles become invalid after `lvgl.deinit()` or after their
-  parent object is deleted.
-- All operations on widget objects (setters, getters, lifecycle, layout)
-  are exposed **only** as methods on the userdata. There is no
-  `lvgl.set_text(obj, ...)` style; use `obj:set_text(...)` instead. Each
-  widget metatable advertises only methods that make sense for its type,
-  so calling an unsupported method raises `attempt to call a nil value`
-  immediately at the call site rather than at runtime inside C.
-- LVGL event callbacks are dispatched on the **script task** rather than the
-  LVGL task. After registering callbacks with `obj:on(...)`, the script must
-  drive the event loop via either `lvgl.run()` (blocks until the cap_lua job
-  is asked to stop) or repeated `lvgl.process_events([timeout_ms])` calls.
-  This is what makes Lua callbacks safe in a single-script subsystem; see
-  RFC §4.2 for the reasoning.
-- This release does not yet support encoder/keypad indevs, custom fonts,
-  advanced style parts/states, or image decoder/filesystem setup. Touch
-  is supported via `lvgl.indev_register("touch", touch_handle)`.
-- `lvgl.image(...)` only forwards a string `src` to LVGL. Whether that string
-  can load depends on firmware FS and decoder configuration outside this module.
-- Chinese or other non-ASCII text may not render unless the firmware LVGL font configuration includes a matching font.
-
-## Typical example
+## Minimal Example
 
 ```lua
 local board_manager = require("board_manager")
 local lvgl = require("lvgl")
-local delay = require("delay")
 
 local panel_handle, io_handle, width, height, panel_if =
     board_manager.get_display_lcd_params("display_lcd")
@@ -77,11 +29,13 @@ lvgl.init(panel_handle, io_handle, width, height, panel_if, {
 })
 
 local scr = lvgl.create_screen()
-lvgl.label(scr, {
+scr:set_style({ bg_color = "#101820" })
+
+local label = lvgl.label(scr, {
     text = "LVGL from Lua",
     align = "top_mid",
-    x = 0,
     y = 20,
+    text_color = "#ffffff",
 })
 
 local btn = lvgl.button(scr, {
@@ -89,325 +43,348 @@ local btn = lvgl.button(scr, {
     align = "center",
     w = 120,
     h = 44,
+    bg_color = "#2f80ed",
+    text_color = "#ffffff",
 })
-btn:set_text("Updated")
 
-local bar = lvgl.bar(scr, {
-    align = "bottom_mid",
-    x = 0,
-    y = -34,
-    w = width - 40,
-    h = 18,
-    min = 0,
-    max = 100,
-    value = 65,
-})
-bar:set_value(80)
+btn:on("clicked", function()
+    label:set_text("clicked")
+end)
 
 scr:load()
-delay.delay_ms(5000)
+lvgl.run()
 lvgl.deinit()
 ```
 
-## Module-level API
-
-These are the functions hosted on the `lvgl` module table itself. Every
-other operation is invoked as a method on a widget userdata.
-
-### `lvgl.init(panel_handle, io_handle, width, height[, panel_if, options])`
-
-Initializes LVGL for an existing LCD panel.
-
-- `panel_handle`: lightuserdata for an `esp_lcd_panel_handle_t`
-- `io_handle`: lightuserdata for an `esp_lcd_panel_io_handle_t`; required for IO panels
-- `width`: display width
-- `height`: display height
-- `panel_if`: optional panel interface constant, default `lvgl.PANEL_IF_IO`
-- `options`: optional table
-
-Options:
-- `buffer_lines`: number of lines in the partial draw buffer, default `40`
-- `tick_ms`: LVGL tick interval, default `5`
-- `task_period_ms`: LVGL handler task period, default `10`
-
-Returns `true` on success. Raises a Lua error on failure.
-
-### `lvgl.deinit()`
-
-Stops the LVGL task and tick timer, deletes the LVGL display, frees the draw buffer, and releases display ownership.
-The same cleanup is also performed automatically when the owner script exits.
-
-Returns `true`.
-
-### `lvgl.screen()`
-
-Returns the current active screen object.
-
-### `lvgl.create_screen()`
-
-Creates and returns a new screen object.
-
-### `lvgl.process_events([timeout_ms])`
-
-Drains queued LVGL events (callbacks registered with `obj:on(...)`) on the
-calling script task.
-
-- `timeout_ms = 0` (default): single non-blocking pass; returns immediately
-  after draining whatever is currently queued
-- `timeout_ms > 0`: keeps draining for up to `timeout_ms` milliseconds. When
-  the queue empties the function sleeps in short slices (~20ms) and
-  re-checks until either the deadline expires or the cap_lua job is asked
-  to stop
-
-Returns the number of callbacks invoked.
-
-### `lvgl.run([opts])`
-
-Convenience wrapper that loops `process_events(period_ms)` until cap_lua
-asks the job to stop. Use this as the last call in a UI script:
+## Init And Deinit
 
 ```lua
--- ... build UI, register callbacks ...
+lvgl.init(panel_handle, io_handle, width, height, panel_if, opts)
+```
+
+Common `opts`:
+- `buffer_lines`: draw buffer height in lines, default `40`
+- `tick_ms`: LVGL tick period, default `5`
+- `task_period_ms`: LVGL handler task period, default `10`
+
+Shutdown:
+
+```lua
+lvgl.deinit()
+```
+
+## Touch Input
+
+Register a touch panel as an LVGL input device:
+
+```lua
+local touch_handle, err = board_manager.get_lcd_touch_handle("lcd_touch")
+if touch_handle then
+    lvgl.indev_register("touch", touch_handle)
+end
+```
+
+Unregister it before shutdown when needed:
+
+```lua
+lvgl.indev_unregister("touch")
+```
+
+`indev_register("touch", ...)` borrows the `esp_lcd_touch_handle_t`; it does
+not free the underlying touch handle.
+
+## Event Loop
+
+Register callbacks with `obj:on(event, callback)`:
+
+```lua
+local handle = btn:on("clicked", function()
+    print("clicked")
+end)
+```
+
+Remove callbacks:
+
+```lua
+btn:off(handle)      -- remove one callback handle
+btn:off("clicked")  -- remove all callbacks for this event
+btn:off()           -- remove all callbacks from this object
+```
+
+Supported event names:
+
+`clicked`, `pressed`, `released`, `long_pressed`, `value_changed`,
+`focused`, `defocused`, `ready`, `cancel`
+
+Drive the event loop:
+
+```lua
 lvgl.run()
 ```
 
-`opts.period_ms` (default `200`) controls the slice length; smaller values
-react to stop signals faster at the cost of slightly more CPU.
-
-Returns the total number of callbacks invoked across all slices.
-
-### `lvgl.indev_register(kind, handle)`
-
-Registers an input device with the LVGL runtime. `kind` selects the
-device type:
-
-| `kind`    | Expected `handle`                                         | Notes |
-| --------- | --------------------------------------------------------- | ----- |
-| `"touch"` | `esp_lcd_touch_handle_t` lightuserdata, e.g. from `board_manager.get_lcd_touch_handle("display_touch")` | Creates a single `LV_INDEV_TYPE_POINTER` indev. Re-registering raises an error; call `lvgl.indev_unregister("touch")` first. |
-
-Returns `true` on success. The Lua handle is borrowed: tearing down the
-LVGL runtime (`lvgl.deinit()`) deletes the LVGL indev but never frees
-the underlying `esp_lcd_touch` handle, so the same handle stays usable
-by `lua_module_lcd_touch` or other consumers.
+Or:
 
 ```lua
-local touch_handle = board_manager.get_lcd_touch_handle("display_touch")
-lvgl.indev_register("touch", touch_handle)
+while true do
+    lvgl.process_events(50)
+    -- run other periodic Lua-side work here
+end
 ```
 
-### `lvgl.indev_unregister(kind)`
+## Widget Constructors
 
-Removes a previously registered indev. Returns `true` if a device of
-that kind was attached, `false` otherwise. Safe to call when the LVGL
-runtime is not initialized.
+All constructors follow the same basic shape:
 
-### Widget factories
+```lua
+local obj = lvgl.widget(parent, opts)
+```
 
-Each call below returns a new widget userdata. Use the `opts` table to
-configure visual properties at creation time.
+Basic widgets:
 
 - `lvgl.object(parent, opts)`
 - `lvgl.container(parent, opts)`
 - `lvgl.label(parent, opts)`
-- `lvgl.button(parent, opts)` — if `opts.text` is set, a centered child label is created and tracked so `btn:set_text(text)` can update it later
-- `lvgl.bar(parent, opts)` — supports `min`, `max`, `value`
-- `lvgl.slider(parent, opts)` — supports `min`, `max`, `value`
-- `lvgl.image(parent, { src = "..." })`
-- `lvgl.line(parent, { points = {{x=0,y=0}, {x=10,y=10}}, y_invert = false })`
+- `lvgl.button(parent, { text = "OK" })`
+- `lvgl.bar(parent, { min = 0, max = 100, value = 50 })`
+- `lvgl.slider(parent, { min = 0, max = 100, value = 50 })`
 - `lvgl.arc(parent, opts)`
-- `lvgl.spinner(parent, { anim_ms = 1000, arc_sweep = 60 })`
 - `lvgl.scale(parent, opts)`
-- `lvgl.checkbox(parent, { text = "...", checked = true })`
+- `lvgl.checkbox(parent, { text = "Enable", checked = true })`
 - `lvgl.switch(parent, { checked = true })`
-- `lvgl.dropdown(parent, { options = {"A", "B"} or "A\nB", selected = 1 })`
-- `lvgl.roller(parent, { options = {"A", "B"} or "A\nB", selected = 1 })`
-- `lvgl.keyboard(parent, { mode = "text_lower", popovers = false, textarea = obj })`
+- `lvgl.dropdown(parent, { options = {"A", "B"}, selected = 1 })`
+- `lvgl.roller(parent, { options = {"A", "B"}, selected = 1 })`
+- `lvgl.keyboard(parent, { mode = "text_lower", textarea = textarea })`
+- `lvgl.textarea(parent, { text = "..." })`
 - `lvgl.list(parent, opts)`
-- `lvgl.textarea(parent, opts)`
 - `lvgl.table(parent, opts)`
+- `lvgl.image(parent, { src = "S:/path.bin" })`
+- `lvgl.line(parent, { points = {{x=0,y=0}, {x=20,y=20}} })`
+- `lvgl.spinner(parent, { anim_ms = 1000, arc_sweep = 60 })`
+- `lvgl.buttonmatrix(parent, { map = {"1", "2", "\n", "3"}, one_checked = true })`
+- `lvgl.calendar(parent, { today = {2026, 5, 15}, shown = {2026, 5}, highlighted = {{2026, 5, 15}} })`
+- `lvgl.canvas(parent, { w = 80, h = 40, color_format = "rgb565" })`
+- `lvgl.chart(parent, { type = "line", point_count = 10, min = 0, max = 100, update_mode = "shift" })`
+- `lvgl.imagebutton(parent, { src = "S:/path.bin" })`
+- `lvgl.led(parent, { color = "#00ff00", brightness = 180, on = true })`
+- `lvgl.menu(parent, opts)`
+- `lvgl.msgbox(parent_or_nil, { title = "...", text = "...", buttons = {"OK"}, close_button = true })`
+- `lvgl.spangroup(parent, { mode = "break", overflow = "ellipsis", spans = {"A", "B"} })`
+- `lvgl.spinbox(parent, { min = 0, max = 100, value = 10, step = 1 })`
+- `lvgl.tabview(parent, { tab_bar_position = "top", tab_bar_size = 36 })`
+- `lvgl.tileview(parent, opts)`
+- `lvgl.window(parent, opts)`
 
-Rows, columns, selected dropdown/roller indexes, and grid cell indexes are
-1-based in Lua.
+Lua index convention:
+- dropdown/roller selected indexes are 1-based
+- table rows and columns are 1-based
+- buttonmatrix selected indexes are 1-based
+- tabview active indexes are 1-based
+- tileview `col` and `row` are 1-based
 
-### Common widget options
+## Common Options
 
-Most constructors accept:
-- `text`
-- `x`, `y`
-- `w`, `h`
-- `align`
-- `min`, `max`, `value` for numeric widgets
-- style fields: `bg_color`, `text_color`, `border_color`, `bg_opa`, `opa`,
-  `radius`, `border_width`, `pad`, `pad_row`, `pad_column`, `line_color`,
-  `line_width`, `arc_width`
+Most widgets support:
 
-Color fields accept `0xRRGGBB` numbers or `"#RRGGBB"` strings. Style uses
-LVGL selector `0` only.
+- Position and size: `x`, `y`, `w`, `h`, `align`
+- Text: `text`
+- Numeric values: `min`, `max`, `value`
+- Style: `bg_color`, `text_color`, `border_color`, `bg_opa`, `opa`,
+  `radius`, `border_width`, `pad`, `pad_row`, `pad_column`,
+  `line_color`, `line_width`, `arc_width`
 
-## Method API (`obj:method(...)`)
-
-Every widget userdata carries a metatable named `lvgl.obj.<type>` whose
-`__index` chain provides:
-
-1. **Methods specific to the widget type** (e.g. `slider:set_value(v)`)
-2. **Base methods shared by every widget type** (e.g. `obj:align(...)`)
-
-A method that does not exist on a given type is simply absent from its
-metatable, so Lua reports `attempt to call a nil value (method 'set_value')`
-immediately rather than dispatching to C and failing later.
-
-### Base methods (available on every widget)
-
-| Method                           | Returns      | Notes                                                                                  |
-| -------------------------------- | ------------ | -------------------------------------------------------------------------------------- |
-| `obj:set_pos(x, y)`              | `true`       |                                                                                        |
-| `obj:get_pos()`                  | `x, y`       |                                                                                        |
-| `obj:set_size(w, h)`             | `true`       |                                                                                        |
-| `obj:get_size()`                 | `w, h`       |                                                                                        |
-| `obj:align(name [, x, y])`       | `true`       | `name` ∈ `top_left top_mid top top_right bottom_left bottom_mid bottom bottom_right left_mid left right_mid right center centre` |
-| `obj:is_valid()`                 | `boolean`    | `false` after delete / parent delete / deinit                                          |
-| `obj:set_style(opts)`            | `true`       | Same fields as the constructor `opts`                                                  |
-| `obj:set_flex(opts)`             | `true`       | See "Layout helpers" below                                                             |
-| `obj:set_grid(opts)`             | `true`       | See "Layout helpers" below                                                             |
-| `obj:set_grid_cell(opts)`        | `true`       | Fields `col / row / col_span / row_span / col_align / row_align`                       |
-| `obj:set_scroll(opts)`           | `true`       | See "Layout helpers" below                                                             |
-| `obj:on(event, callback)`        | `handle`     | Subscribes a Lua function to an event; see "Events" below                              |
-| `obj:off([handle \| event])`     | `count`      | Cancels one subscription (handle), all subscriptions for an event name, or all if no arg |
-| `obj:delete()`                   | `true`       | Invalidates the Lua handle                                                             |
-| `obj:clean()`                    | `true`       | Deletes all children but keeps `obj`                                                   |
-
-### Type-specific methods
-
-| Method            | Available on                                                          | Notes                                              |
-| ----------------- | --------------------------------------------------------------------- | -------------------------------------------------- |
-| `set_text(text)`  | `label`, `button`, `checkbox`, `dropdown`, `textarea`, `list_text`, `list_button` |                                                    |
-| `set_value(v[,a])`| `bar`, `slider`, `arc`, `scale`, `dropdown`, `roller`, `checkbox`, `switch` | `a` is a boolean for animation when supported       |
-| `get_value()`     | same as `set_value`                                                   |                                                    |
-| `set_range(l, h)` | `bar`, `slider`, `arc`, `scale`                                       |                                                    |
-| `screen:load()`   | `screen` only                                                         | Replaces the previous module-level `lvgl.load(scr)` |
-| `list:add_text(t)`        | `list` only                                                   | Returns the new `list_text` userdata                |
-| `list:add_button(t[, s])` | `list` only                                                   | Returns the new `list_button` userdata              |
-| `table:set_cell(r, c, t)` | `table` only                                                  | 1-based                                            |
-| `table:get_cell(r, c)`    | `table` only                                                  | Returns the cell text or `""`                      |
-
-### Layout helpers (called via base methods)
-
-`obj:set_flex(opts)` fields:
-- `flow`: `row`, `column`, `row_wrap`, `row_reverse`,
-  `row_wrap_reverse`, `column_wrap`, `column_reverse`, `column_wrap_reverse`
-- `main`, `cross`, `track`: `start`, `center`, `end`, `space_between`,
-  `space_around`, `space_evenly`
-
-`obj:set_grid(opts)` fields:
-- `cols`, `rows`: arrays of integers, `"fr"`, or `"content"`
-- `col_align`, `row_align`: `start`, `center`, `end`, `stretch`,
-  `space_between`, `space_around`, `space_evenly`
-
-Grid descriptor arrays are copied into C-owned memory and remain valid until
-the object is deleted, deinitialized, or `obj:set_grid()` is called again.
-
-`obj:set_scroll(opts)` fields:
-- `dir`: `none`, `left`, `right`, `top`, `bottom`, `hor`, `ver`, `all`
-- `scrollbar`: `off`, `on`, `active`, `auto`
-- `snap_x`, `snap_y`: `none`, `start`, `end`, `center`
-
-## Events
-
-Each widget can subscribe Lua callbacks to LVGL events via `obj:on(event,
-callback)`. The first call returns a light userdata handle that can be
-passed to `obj:off(handle)` to cancel that subscription specifically.
+Colors can be strings or numbers:
 
 ```lua
-local btn = lvgl.button(scr, { text = "OK" })
-local handle = btn:on("clicked", function()
-    print("clicked, value =", slider:get_value())
-end)
-
--- later
-btn:off(handle)        -- cancel one subscription
-btn:off("clicked")     -- cancel all subscriptions for that event
-btn:off()              -- cancel every subscription on btn
+bg_color = "#2f80ed"
+text_color = 0xffffff
 ```
 
-Supported event names (first version):
+## Common Methods
 
-| Lua name          | LVGL constant            |
-| ----------------- | ------------------------ |
-| `"clicked"`       | `LV_EVENT_CLICKED`       |
-| `"pressed"`       | `LV_EVENT_PRESSED`       |
-| `"released"`      | `LV_EVENT_RELEASED`      |
-| `"long_pressed"`  | `LV_EVENT_LONG_PRESSED`  |
-| `"value_changed"` | `LV_EVENT_VALUE_CHANGED` |
-| `"focused"`       | `LV_EVENT_FOCUSED`       |
-| `"defocused"`     | `LV_EVENT_DEFOCUSED`     |
-| `"ready"`         | `LV_EVENT_READY`         |
-| `"cancel"`        | `LV_EVENT_CANCEL`        |
+All LVGL object userdata supports:
 
-Callback signature: `function() ... end` (no arguments). Capture context
-via Lua closures; the `lv_event_t *` is intentionally NOT exposed because
-it lives only inside the LVGL trampoline and cannot survive the deferred
-dispatch.
+- `obj:set_pos(x, y)`
+- `obj:get_pos()` -> `x, y`
+- `obj:set_size(w, h)`
+- `obj:get_size()` -> `w, h`
+- `obj:align(name[, x, y])`
+- `obj:is_valid()` -> boolean
+- `obj:set_style(opts)`
+- `obj:set_flex(opts)`
+- `obj:set_grid(opts)`
+- `obj:set_grid_cell(opts)`
+- `obj:set_scroll(opts)`
+- `obj:on(event, callback)`
+- `obj:off([handle_or_event])`
+- `obj:delete()`
+- `obj:clean()`
 
-### Driving the event loop
+Common `align` names:
 
-Events queued from the LVGL task are dispatched only when the script calls
-`lvgl.run()` or `lvgl.process_events([timeout_ms])`. A typical UI script
-does its setup work at the top, then sits in `lvgl.run()` until the
-cap_lua job is stopped:
+`top_left`, `top_mid`, `top`, `top_right`, `bottom_left`, `bottom_mid`,
+`bottom`, `bottom_right`, `left_mid`, `left`, `right_mid`, `right`,
+`center`, `centre`
+
+## Layout And Scrolling
+
+Flex:
 
 ```lua
-local scr = lvgl.create_screen()
-local btn = lvgl.button(scr, { text = "Tap" })
-btn:on("clicked", function()
-    print("tap")
-end)
-scr:load()
-lvgl.run()              -- returns when cap_lua stop is requested
+obj:set_flex({
+    flow = "column",
+    main = "start",
+    cross = "center",
+    track = "start",
+})
 ```
 
-If the script needs to do its own periodic work in the same loop:
+`flow`: `row`, `column`, `row_wrap`, `row_reverse`, `row_wrap_reverse`,
+`column_wrap`, `column_reverse`, `column_wrap_reverse`
+
+`main/cross/track`: `start`, `center`, `end`, `space_between`,
+`space_around`, `space_evenly`
+
+Grid:
 
 ```lua
-while not done do
-    lvgl.process_events(50)   -- drain for up to 50ms
-    -- update non-LVGL state, push frames over MQTT, etc.
-end
+obj:set_grid({
+    cols = {"fr", "fr"},
+    rows = {"content", 40},
+    col_align = "stretch",
+    row_align = "start",
+})
 ```
 
-### Coalescing semantics
+Scroll:
 
-If the same callback fires repeatedly before `process_events` drains it,
-all but the first fire are coalesced into a single dispatched call. This
-matches typical UI expectations ("react to the latest event") and prevents
-the queue from growing unbounded under fast input. In a future iteration
-this may become opt-out via a per-subscription flag.
+```lua
+obj:set_scroll({
+    dir = "ver",
+    scrollbar = "auto",
+    snap_x = "none",
+    snap_y = "none",
+})
+```
 
-### Error handling
+`dir`: `none`, `left`, `right`, `top`, `bottom`, `hor`, `ver`, `all`
 
-If a callback raises a Lua error, it is logged at `ESP_LOGE` (tag
-`lua_lvgl_evt`) and the script continues. The subscription is **not**
-auto-cancelled.
+## Type-Specific Methods
 
-## Implementation notes
+Basic methods:
 
-- All `lvgl.obj.<type>` metatables share an `__lvgl_obj = true` sentinel
-  field. The internal `lua_lvgl_check_ud()` uses this sentinel to recognize
-  any LVGL widget without being bound to a single metatable name. This is
-  what makes the per-type metatable layout possible while keeping the
-  ud-check logic uniform.
-- Method tables inherit from a single shared "base methods" table via
-  `__index`, so adding a base method only touches one place in
-  `src/lua_lvgl_methods.c`.
-- The event subsystem in `src/lua_lvgl_events.c` decouples LVGL-task event
-  firing from script-task callback dispatch through two queues on
-  `s_lvgl`: an event FIFO of pending subscriptions and a deferred
-  `pending_unrefs` list of registry refs. The LVGL trampoline never touches
-  the Lua state; only `process_events / run / obj:off / deinit` running on
-  the script task do `lua_pcall` and `luaL_unref`.
-- The touch indev in `src/lua_lvgl_indev.c` polls
-  `esp_lcd_touch_read_data` + `esp_lcd_touch_get_data` from the LVGL task's
-  read callback. The LVGL task already holds `lua_lvgl_lock()` during
-  `lv_timer_handler`, so the read callback intentionally does **not**
-  re-take the lock and instead reads the touch handle from the indev's
-  `user_data` slot, which is set once at register time. Tearing down the
-  runtime stops the LVGL task first and only then deletes the indev.
+- `label/button/checkbox/dropdown/textarea/list_text/list_button:set_text(text)`
+- `bar/slider/arc/scale/dropdown/roller/checkbox/switch/spinbox:set_value(v[, anim])`
+- `bar/slider/arc/scale/spinbox:get_value()`
+- `bar/slider/arc/scale/spinbox:set_range(min, max)`
+- `screen:load()`
+- `list:add_text(text)` -> `list_text`
+- `list:add_button(text[, symbol])` -> `list_button`
+- `table:set_cell(row, col, text)`
+- `table:get_cell(row, col)` -> string
+- `buttonmatrix:set_map(map)`
+- `buttonmatrix:set_selected(index)`
+- `buttonmatrix:get_selected()` -> index or nil
+- `buttonmatrix:get_button_text(index)` -> string
+- `buttonmatrix:set_one_checked(bool)`
+- `calendar:set_today(y, m, d)`
+- `calendar:set_shown(y, m)`
+- `calendar:set_highlighted({{y,m,d}, ...})`
+- `calendar:get_pressed_date()` -> `{year, month, day}` or nil
+- `canvas:fill_bg(color[, opa])`
+- `canvas:set_px(x, y, color[, opa])`
+- `canvas:get_px(x, y)` -> `{r, g, b, a}`
+- `chart:add_series(color[, axis])` -> series handle
+- `chart:set_type(type)`
+- `chart:set_point_count(n)`
+- `chart:set_range(min, max[, axis])`
+- `chart:set_next_value(series, value)`
+- `chart:set_series_values(series, values)`
+- `chart:refresh()`
+- `imagebutton:set_src(state, mid[, left, right])`
+- `imagebutton:set_state(state)`
+- `led:set_color(color)`
+- `led:set_brightness(v)`
+- `led:get_brightness()` -> integer
+- `led:on()`, `led:off()`, `led:toggle()`
+- `menu:page(title)` -> page
+- `menu:cont(parent)` -> cont
+- `menu:section(page)` -> section
+- `menu:separator(page)` -> separator
+- `menu:set_page(page)`
+- `menu:set_sidebar_page(page)`
+- `menu:set_mode_header(mode)`
+- `menu:set_root_back_button(bool)`
+- `menu:clear_history()`
+- `msgbox:add_title(text)`
+- `msgbox:add_text(text)`
+- `msgbox:add_footer_button(text)`
+- `msgbox:add_close_button()`
+- `msgbox:close()`
+- `msgbox:close_async()`
+- `spangroup:add_span(text[, style])` -> span handle
+- `spangroup:get_span_count()` -> integer
+- `spangroup:refresh()`
+- `span:set_text(text)`
+- `span:get_text()` -> string
+- `span:set_style(opts)`
+- `span:delete()`
+- `spinbox:set_step(v)`
+- `spinbox:get_step()` -> integer
+- `spinbox:increment()`
+- `spinbox:decrement()`
+- `spinbox:step_next()`
+- `spinbox:step_prev()`
+- `tabview:add_tab(name)` -> tab page
+- `tabview:set_active(index[, anim])`
+- `tabview:get_active()` -> index
+- `tabview:get_tab_count()` -> integer
+- `tabview:set_tab_text(index, text)`
+- `tileview:add_tile(col, row, dir)` -> tile
+- `tileview:set_tile(tile[, anim])`
+- `tileview:set_tile_by_index(col, row[, anim])`
+- `tileview:get_active_tile()` -> tile or nil
+- `window:add_title(text)` -> label
+- `window:add_button(icon[, width])` -> button
+- `window:get_header()` -> object
+- `window:get_content()` -> object
+- `canvas.color_format`: `rgb565`, `rgb888`, `xrgb8888`, `argb8888`, `native`
+- `chart.type`: `none`, `line`, `curve`, `bar`, `stacked`, `scatter`
+- `chart.update_mode`: `shift`, `circular`
+- `chart` axis: `primary_y`, `y`, `secondary_y`, `primary_x`, `x`, `secondary_x`
+- `imagebutton` state: `released`, `pressed`, `disabled`,
+  `checked_released`, `checked_pressed`, `checked_disabled`
+- `spangroup.mode`: `fixed`, `expand`, `break`
+- `spangroup.overflow`: `clip`, `ellipsis`
+- `menu` header mode: `top_fixed`, `top_unfixed`, `bottom_fixed`
+- Direction values: `none`, `left`, `right`, `top`, `bottom`, `hor`, `ver`, `all`
+
+## Demo API
+
+```lua
+local names = lvgl.demos()
+lvgl.demo(names[1])
+```
+
+`lvgl.demo(name)` requires `lvgl.init(...)` first. Available demos depend on
+the firmware's compile-time `LV_USE_DEMO_*` configuration.
+
+## Limitations
+
+- Encoder/keypad indevs are not exposed yet.
+- Custom fonts, image decoders, and filesystem setup are not wrapped.
+- `lvgl.image(...)` and `lvgl.imagebutton(...)` only pass string `src` values
+  to LVGL. Whether those strings load depends on firmware FS/decoder setup.
+- Canvas support covers buffer allocation, background fill, and pixel read/write only. Advanced draw layers are not wrapped.
+- Chart cursors and other advanced chart APIs are not wrapped.
+- Span handles and chart series handles are not LVGL objects; they do not support object base methods such as `set_pos`, `set_style`, or `delete`.
+- Non-ASCII text rendering depends on the fonts enabled in firmware.
+
+## Test Scripts
+
+Directory: `components/lua_modules/lua_module_lvgl/test/`
+
+- `lvgl_basic.lua`: basic display and widgets
+- `lvgl_events.lua`: event callbacks and `process_events`
+- `lvgl_indev.lua`: touch indev registration/unregistration
+- `lvgl_demos.lua`: demo wrapper
+- `lvgl_widgets_test.lua`: full widget test, touch-enabled when available, 60-second interactive window
