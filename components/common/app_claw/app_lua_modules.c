@@ -46,6 +46,9 @@
 #if CONFIG_APP_CLAW_LUA_MODULE_BUTTON
 #include "lua_module_button.h"
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_BLE_HID
+#include "lua_module_ble_hid.h"
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_CAMERA && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
 #include "lua_module_camera.h"
 #endif
@@ -70,6 +73,12 @@
 #if CONFIG_APP_CLAW_LUA_MODULE_JSON
 #include "lua_module_json.h"
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_IMAGE
+#include "lua_image.h"
+#endif
+#if CONFIG_APP_CLAW_LUA_MODULE_THREAD
+#include "lua_module_thread.h"
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_IMU
 #include "lua_module_imu.h"
 #endif
@@ -88,6 +97,9 @@
 #if CONFIG_APP_CLAW_LUA_MODULE_LED_STRIP
 #include "lua_module_led_strip.h"
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_LVGL
+#include "lua_module_lvgl.h"
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_MAGNETOMETER
 #include "lua_module_magnetometer.h"
 #endif
@@ -99,6 +111,9 @@
 #endif
 #if CONFIG_APP_CLAW_LUA_MODULE_SYSTEM
 #include "lua_module_system.h"
+#endif
+#if CONFIG_APP_CLAW_LUA_MODULE_VISION && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
+#include "lua_module_vision.h"
 #endif
 
 static const char *TAG = "app_lua_modules";
@@ -307,6 +322,14 @@ static esp_err_t app_lua_register_button(const char *fatfs_base_path)
 }
 #endif
 
+#if CONFIG_APP_CLAW_LUA_MODULE_BLE_HID
+static esp_err_t app_lua_register_ble_hid(const char *fatfs_base_path)
+{
+    (void)fatfs_base_path;
+    return lua_module_ble_hid_register();
+}
+#endif
+
 #if CONFIG_APP_CLAW_LUA_MODULE_CAMERA && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
 static esp_err_t app_lua_register_camera(const char *fatfs_base_path)
 {
@@ -371,6 +394,22 @@ static esp_err_t app_lua_register_json(const char *fatfs_base_path)
 }
 #endif
 
+#if CONFIG_APP_CLAW_LUA_MODULE_IMAGE
+static esp_err_t app_lua_register_image(const char *fatfs_base_path)
+{
+    (void)fatfs_base_path;
+    return lua_module_image_register();
+}
+#endif
+
+#if CONFIG_APP_CLAW_LUA_MODULE_THREAD
+static esp_err_t app_lua_register_thread(const char *fatfs_base_path)
+{
+    (void)fatfs_base_path;
+    return lua_module_thread_register();
+}
+#endif
+
 #if CONFIG_APP_CLAW_LUA_MODULE_IMU
 static esp_err_t app_lua_register_imu(const char *fatfs_base_path)
 {
@@ -419,6 +458,14 @@ static esp_err_t app_lua_register_led_strip(const char *fatfs_base_path)
 }
 #endif
 
+#if CONFIG_APP_CLAW_LUA_MODULE_LVGL
+static esp_err_t app_lua_register_lvgl(const char *fatfs_base_path)
+{
+    (void)fatfs_base_path;
+    return lua_module_lvgl_register();
+}
+#endif
+
 #if CONFIG_APP_CLAW_LUA_MODULE_MAGNETOMETER
 static esp_err_t app_lua_register_magnetometer(const char *fatfs_base_path)
 {
@@ -447,6 +494,14 @@ static esp_err_t app_lua_register_system(const char *fatfs_base_path)
 {
     (void)fatfs_base_path;
     return lua_module_system_register();
+}
+#endif
+
+#if CONFIG_APP_CLAW_LUA_MODULE_VISION && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
+static esp_err_t app_lua_register_vision(const char *fatfs_base_path)
+{
+    (void)fatfs_base_path;
+    return lua_module_vision_register();
 }
 #endif
 
@@ -483,6 +538,9 @@ static const app_lua_module_entry_t s_lua_module_entries[] = {
 #if CONFIG_APP_CLAW_LUA_MODULE_BUTTON
     { "button", "Button", app_lua_register_button },
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_BLE_HID
+    { "ble_hid", "BLE HID", app_lua_register_ble_hid },
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_CAMERA && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
     { "camera", "Camera", app_lua_register_camera },
 #endif
@@ -507,6 +565,12 @@ static const app_lua_module_entry_t s_lua_module_entries[] = {
 #if CONFIG_APP_CLAW_LUA_MODULE_JSON
     { "json", "JSON", app_lua_register_json },
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_IMAGE
+    { "image", "Image", app_lua_register_image },
+#endif
+#if CONFIG_APP_CLAW_LUA_MODULE_THREAD
+    { "thread", "Thread", app_lua_register_thread },
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_IMU
     { "imu", "IMU", app_lua_register_imu },
 #endif
@@ -525,6 +589,9 @@ static const app_lua_module_entry_t s_lua_module_entries[] = {
 #if CONFIG_APP_CLAW_LUA_MODULE_LED_STRIP
     { "led_strip", "LED Strip", app_lua_register_led_strip },
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_LVGL
+    { "lvgl", "LVGL", app_lua_register_lvgl },
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_MAGNETOMETER
     { "magnetometer", "Magnetometer", app_lua_register_magnetometer },
 #endif
@@ -536,6 +603,9 @@ static const app_lua_module_entry_t s_lua_module_entries[] = {
 #endif
 #if CONFIG_APP_CLAW_LUA_MODULE_SYSTEM
     { "system", "System", app_lua_register_system },
+#endif
+#if CONFIG_APP_CLAW_LUA_MODULE_VISION && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
+    { "vision", "Vision", app_lua_register_vision },
 #endif
 };
 
@@ -572,6 +642,9 @@ static const app_lua_module_info_t s_lua_module_infos[] = {
 #if CONFIG_APP_CLAW_LUA_MODULE_BUTTON
     { "button", "Button" },
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_BLE_HID
+    { "ble_hid", "BLE HID" },
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_CAMERA && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
     { "camera", "Camera" },
 #endif
@@ -596,6 +669,12 @@ static const app_lua_module_info_t s_lua_module_infos[] = {
 #if CONFIG_APP_CLAW_LUA_MODULE_JSON
     { "json", "JSON" },
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_IMAGE
+    { "image", "Image" },
+#endif
+#if CONFIG_APP_CLAW_LUA_MODULE_THREAD
+    { "thread", "Thread" },
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_IMU
     { "imu", "IMU" },
 #endif
@@ -614,6 +693,9 @@ static const app_lua_module_info_t s_lua_module_infos[] = {
 #if CONFIG_APP_CLAW_LUA_MODULE_LED_STRIP
     { "led_strip", "LED Strip" },
 #endif
+#if CONFIG_APP_CLAW_LUA_MODULE_LVGL
+    { "lvgl", "LVGL" },
+#endif
 #if CONFIG_APP_CLAW_LUA_MODULE_MAGNETOMETER
     { "magnetometer", "Magnetometer" },
 #endif
@@ -625,6 +707,9 @@ static const app_lua_module_info_t s_lua_module_infos[] = {
 #endif
 #if CONFIG_APP_CLAW_LUA_MODULE_SYSTEM
     { "system", "System" },
+#endif
+#if CONFIG_APP_CLAW_LUA_MODULE_VISION && defined(CONFIG_ESP_BOARD_DEV_CAMERA_SUPPORT)
+    { "vision", "Vision" },
 #endif
 };
 

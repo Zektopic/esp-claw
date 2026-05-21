@@ -239,6 +239,18 @@ menu "App Claw Config"
                 Enable the button Lua module and keep app_claw's direct dependency
                 on lua_module_button when Lua capability is enabled.
 
+        config APP_CLAW_LUA_MODULE_BLE_HID
+            bool "Enable BLE HID Lua module"
+            default y
+            depends on APP_CLAW_CAP_LUA
+            select BT_NIMBLE_HID_SERVICE
+            help
+                Enable the BLE HID Lua module for Consumer Control, Keyboard, Mouse,
+                and local HID behavior. This module owns its BLE HID runtime via
+                ESP-IDF NimBLE and esp_hidd, and exposes the ble_hid.* behavior APIs.
+                Do not start the generic BLE Lua module advertising while BLE HID is
+                running.
+
         config APP_CLAW_LUA_MODULE_CAMERA
             bool "Enable camera Lua module"
             default y if ESP_BOARD_DEV_CAMERA_SUPPORT
@@ -296,12 +308,25 @@ menu "App Claw Config"
                 Enable the JSON Lua module and keep app_claw's direct dependency
                 on lua_module_json when Lua capability is enabled.
 
+        config APP_CLAW_LUA_MODULE_THREAD
+            bool "Enable Thread Lua module"
+            default y
+            help
+                Enable the Thread Lua module and keep app_claw's direct
+                dependency on lua_module_thread when Lua capability is enabled.
+
         config APP_CLAW_LUA_MODULE_FUEL_GAUGE
             bool "Enable Fuel Gauge Lua module"
             default n
             help
                 Enable the Fuel Gauge Lua module and keep app_claw's direct dependency
                 on lua_module_fuel_gauge when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_IMAGE
+            bool "Enable image Lua module"
+            default y
+            help
+                Enable the image Lua module. Exposes frame format conversion helpers.
 
         config APP_CLAW_LUA_MODULE_IMU
             bool "Enable IMU Lua module"
@@ -346,6 +371,13 @@ menu "App Claw Config"
                 Enable the LED strip Lua module and keep app_claw's direct dependency
                 on lua_module_led_strip when Lua capability is enabled.
 
+        config APP_CLAW_LUA_MODULE_LVGL
+            bool "Enable LVGL Lua module"
+            default y
+            help
+                Enable the LVGL Lua module and keep app_claw's direct dependency
+                on lua_module_lvgl when Lua capability is enabled.
+
         config APP_CLAW_LUA_MODULE_MAGNETOMETER
             bool "Enable magnetometer Lua module"
             default n
@@ -381,6 +413,16 @@ menu "App Claw Config"
             help
                 Enable the system Lua module and keep app_claw's direct dependency
                 on lua_module_system when Lua capability is enabled.
+
+        config APP_CLAW_LUA_MODULE_VISION
+            bool "Enable vision Lua modules"
+            default y if ESP_BOARD_DEV_CAMERA_SUPPORT
+            default n
+            help
+                Enable the vision Lua modules and keep app_claw's direct dependency
+                on lua_module_vision when Lua capability is enabled. This module
+                currently registers only motion_detect and does not pull in ESP-DL
+                model components.
 
     endmenu
 

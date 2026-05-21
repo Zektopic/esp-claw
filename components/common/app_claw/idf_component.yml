@@ -166,6 +166,12 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_BUTTON} == True
     path: ../../lua_modules/lua_module_button
 
+  lua_module_ble_hid:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_BLE_HID} == True
+    path: ../../lua_modules/lua_module_ble_hid
+
   lua_module_call_capability:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
@@ -215,11 +221,23 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_JSON} == True
     path: ../../lua_modules/lua_module_json
 
+  lua_module_thread:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_THREAD} == True
+    path: ../../lua_modules/lua_module_thread
+
   lua_module_fuel_gauge:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
       - if: $CONFIG{APP_CLAW_LUA_MODULE_FUEL_GAUGE} == True
     path: ../../lua_modules/lua_module_fuel_gauge
+
+  lua_module_image:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_IMAGE} == True
+    path: ../../lua_modules/lua_module_image
 
   lua_module_imu:
     rules:
@@ -259,6 +277,12 @@ dependencies:
       - if: $CONFIG{APP_CLAW_LUA_MODULE_LED_STRIP} == True
     path: ../../lua_modules/lua_module_led_strip
 
+  lua_module_lvgl:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_LVGL} == True
+    path: ../../lua_modules/lua_module_lvgl
+
   lua_module_magnetometer:
     rules:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
@@ -288,3 +312,10 @@ dependencies:
       - if: $CONFIG{APP_CLAW_CAP_LUA} == True
       - if: $CONFIG{APP_CLAW_LUA_MODULE_SYSTEM} == True
     path: ../../lua_modules/lua_module_system
+
+  lua_module_vision:
+    rules:
+      - if: $CONFIG{APP_CLAW_CAP_LUA} == True
+      - if: $CONFIG{APP_CLAW_LUA_MODULE_VISION} == True
+      - if: $CONFIG{ESP_BOARD_DEV_CAMERA_SUPPORT} == True
+    path: ../../lua_modules/lua_module_vision
