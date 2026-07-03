@@ -26,6 +26,7 @@ export interface SkillFrontmatter {
   simulator?: {
     type?: string
     entry?: string
+    files?: string[]
     width?: number
     height?: number
     touch?: boolean

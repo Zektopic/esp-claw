@@ -1,5 +1,5 @@
 import { fetchBinary, fetchText } from './repo-provider'
-import { assertSimulatorSupported, inferEntry, parseFilesSection, splitSkillMarkdown } from './skill-parser'
+import { assertSimulatorSupported, getSimulatorFiles, inferEntry, splitSkillMarkdown } from './skill-parser'
 import type { LoadedSkill, SimulatorParams, SkillFile } from './types'
 
 function dirname(path: string): string {
@@ -22,7 +22,11 @@ export async function loadSkill(params: SimulatorParams): Promise<LoadedSkill> {
   const { frontmatter, body } = splitSkillMarkdown(rawSkillMd)
   assertSimulatorSupported(frontmatter)
 
-  const fileList = parseFilesSection(body)
+  const fileList = getSimulatorFiles(frontmatter, body)
+  const entry = inferEntry(frontmatter, body, fileList)
+  if (!fileList.includes(entry)) {
+    fileList.unshift(entry)
+  }
   if (!fileList.includes('SKILL.md')) {
     fileList.unshift('SKILL.md')
   }
@@ -38,7 +42,6 @@ export async function loadSkill(params: SimulatorParams): Promise<LoadedSkill> {
     })
   }
 
-  const entry = inferEntry(frontmatter, body, fileList)
   const virtualRoot = `/skills/${frontmatter.name}`
 
   return {

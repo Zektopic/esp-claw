@@ -46,9 +46,28 @@ export function parseFilesSection(body: string): string[] {
   return Array.from(new Set(files))
 }
 
+function normalizeSkillFilePath(path: string): string {
+  const normalized = path.trim().replaceAll('\\', '/').replace(/^\/+/, '')
+  if (!normalized || normalized.includes('..')) {
+    throw new Error(`invalid simulator file path: ${path}`)
+  }
+  return normalized
+}
+
+export function getSimulatorFiles(frontmatter: SkillFrontmatter, body: string): string[] {
+  const configured = frontmatter.simulator?.files
+  if (configured !== undefined) {
+    if (!Array.isArray(configured)) {
+      throw new Error('simulator.files must be an array of skill-relative paths')
+    }
+    return Array.from(new Set(configured.map(normalizeSkillFilePath)))
+  }
+  return parseFilesSection(body)
+}
+
 export function inferEntry(frontmatter: SkillFrontmatter, body: string, files: string[]): string {
   const configured = frontmatter.simulator?.entry
-  if (configured) return configured.replaceAll('\\', '/').replace(/^\/+/, '')
+  if (configured) return normalizeSkillFilePath(configured)
 
   const jsonBlocks = body.matchAll(/```json\s*([\s\S]*?)```/g)
   for (const block of jsonBlocks) {
@@ -76,5 +95,11 @@ export function assertSimulatorSupported(frontmatter: SkillFrontmatter): void {
   const categories = frontmatter.metadata?.category ?? []
   if (!categories.includes('ui')) {
     throw new Error('this skill is not marked as simulator-capable: metadata.category must include "ui"')
+  }
+  if (!frontmatter.simulator?.entry) {
+    throw new Error('simulator-capable skills must define simulator.entry')
+  }
+  if (!Array.isArray(frontmatter.simulator.files) || frontmatter.simulator.files.length === 0) {
+    throw new Error('simulator-capable skills must define non-empty simulator.files')
   }
 }

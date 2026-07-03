@@ -85,8 +85,8 @@ set(ESP_CLAW_SIM_SOURCES
 )
 
 set(ESP_CLAW_SIM_COMMON_LINK_FLAGS "-O3 --shell-file ${PROJECT_SOURCE_DIR}/esp_claw_shell.html -s ASYNCIFY=1 -s ASYNCIFY_STACK_SIZE=262144 -s EXPORTED_RUNTIME_METHODS=['ccall','FS']")
-set(ESP_CLAW_SIM_PRELOAD_FLAGS "--preload-file ${PROJECT_SOURCE_DIR}/sim/lvgl_web_shim.lua@/sim/lvgl_web_shim.lua --preload-file ${PROJECT_SOURCE_DIR}/sim_assets/fonts@/fonts --preload-file ${ESP_CLAW_ROOT}/components/lua_modules/lua_module_display/test@/scripts/display --preload-file ${ESP_CLAW_ROOT}/components/lua_modules/lua_module_lvgl/test@/scripts/lvgl")
-set(ESP_CLAW_SIM_EMBED_FLAGS "--embed-file ${PROJECT_SOURCE_DIR}/sim/lvgl_web_shim.lua@/sim/lvgl_web_shim.lua --embed-file ${PROJECT_SOURCE_DIR}/sim_assets/fonts@/fonts --embed-file ${ESP_CLAW_ROOT}/components/lua_modules/lua_module_display/test@/scripts/display --embed-file ${ESP_CLAW_ROOT}/components/lua_modules/lua_module_lvgl/test@/scripts/lvgl")
+set(ESP_CLAW_SIM_RUNTIME_ASSETS "--preload-file ${PROJECT_SOURCE_DIR}/sim/lvgl_web_shim.lua@/sim/lvgl_web_shim.lua --preload-file ${PROJECT_SOURCE_DIR}/sim_assets/fonts@/fonts")
+set(ESP_CLAW_SIM_EMBED_ASSETS "--embed-file ${PROJECT_SOURCE_DIR}/sim/lvgl_web_shim.lua@/sim/lvgl_web_shim.lua --embed-file ${PROJECT_SOURCE_DIR}/sim_assets/fonts@/fonts")
 
 function(configure_esp_claw_sim_target target_name)
 target_include_directories(${target_name} PRIVATE
@@ -109,12 +109,12 @@ add_executable(esp_claw_sim ${ESP_CLAW_SIM_SOURCES})
 configure_esp_claw_sim_target(esp_claw_sim)
 set_target_properties(esp_claw_sim PROPERTIES
     SUFFIX ".html"
-    LINK_FLAGS "${ESP_CLAW_SIM_COMMON_LINK_FLAGS} ${ESP_CLAW_SIM_PRELOAD_FLAGS}"
+    LINK_FLAGS "${ESP_CLAW_SIM_COMMON_LINK_FLAGS} ${ESP_CLAW_SIM_RUNTIME_ASSETS}"
 )
 
 add_executable(esp_claw_sim_release ${ESP_CLAW_SIM_SOURCES})
 configure_esp_claw_sim_target(esp_claw_sim_release)
 set_target_properties(esp_claw_sim_release PROPERTIES
     SUFFIX ".html"
-    LINK_FLAGS "${ESP_CLAW_SIM_COMMON_LINK_FLAGS} ${ESP_CLAW_SIM_EMBED_FLAGS} -s SINGLE_FILE=1"
+    LINK_FLAGS "${ESP_CLAW_SIM_COMMON_LINK_FLAGS} ${ESP_CLAW_SIM_EMBED_ASSETS} -s SINGLE_FILE=1"
 )

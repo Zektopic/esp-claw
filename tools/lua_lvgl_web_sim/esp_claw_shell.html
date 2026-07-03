@@ -81,6 +81,23 @@
           grid-template-rows: auto 320px;
         }
       }
+      body.embedded {
+        grid-template-columns: 1fr;
+        padding: 0;
+        background: #000;
+      }
+      body.embedded #stage {
+        width: 100%;
+        height: 100%;
+      }
+      body.embedded #canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      body.embedded #side {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -89,17 +106,7 @@
     </main>
     <aside id="side">
       <select id="scriptSelect">
-        <option value="/scripts/display/display_shapes.lua">display/display_shapes.lua</option>
-        <option value="/scripts/display/display_pixels_demo.lua">display/display_pixels_demo.lua</option>
-        <option value="/scripts/display/display_text_style_demo.lua">display/display_text_style_demo.lua</option>
-        <option value="/scripts/lvgl/lvgl_basic.lua">lvgl/lvgl_basic.lua</option>
-        <option value="/scripts/lvgl/lvgl_demos.lua">lvgl/lvgl_demos.lua</option>
-        <option value="/scripts/lvgl/lvgl_indev.lua">lvgl/lvgl_indev.lua</option>
-        <option value="/scripts/lvgl/lvgl_events.lua">lvgl/lvgl_events.lua</option>
-        <option value="/scripts/lvgl/lvgl_ttf_font.lua">lvgl/lvgl_ttf_font.lua</option>
-        <option value="/scripts/lvgl/lvgl_widgets_test.lua">lvgl/lvgl_widgets_test.lua</option>
-        <option value="/scripts/flappybird/flappybird.lua">flappybird/flappybird.lua</option>
-        <option value="/scripts/network_radio/network_radio_app.lua">network_radio/network_radio_app.lua</option>
+        <option value="">Upload or mount a Lua script</option>
       </select>
       <div class="resolution">
         <input id="widthInput" type="number" min="64" max="2048" step="1" value="800" aria-label="width" />
@@ -113,7 +120,7 @@
       <input id="luaUpload" type="file" accept=".lua,text/x-lua,text/plain" />
       <input id="fsUpload" type="file" multiple webkitdirectory />
       <div class="run-actions">
-        <button id="runButton">Run</button>
+        <button id="runButton" disabled>Run</button>
         <button id="stopButton" disabled>Stop</button>
       </div>
       <textarea id="log" readonly></textarea>
@@ -823,6 +830,7 @@
           };
           const addScriptOption = (path) => {
             const select = document.getElementById("scriptSelect");
+            const runButton = document.getElementById("runButton");
             let option = Array.from(select.options).find((item) => item.value === path);
             if (!option) {
               option = document.createElement("option");
@@ -831,6 +839,7 @@
               select.appendChild(option);
             }
             select.value = path;
+            runButton.disabled = false;
           };
           const runPath = async (path, clearLog) => {
             const button = document.getElementById("runButton");
@@ -863,6 +872,10 @@
           const run = async () => {
             Module.__simServices.audio.unlock();
             const path = document.getElementById("scriptSelect").value;
+            if (!path) {
+              Module.printErr("[sim] no script mounted. Upload a Lua file or launch from Skill Lab.");
+              return;
+            }
             await runPath(path, true);
           };
           window.espClawSim = {
@@ -940,26 +953,6 @@
               }, event.origin || "*");
             }
           });
-          const runUploadSelfTest = async () => {
-            const script = [
-              'local bm = require("board_manager")',
-              'local display = require("display")',
-              'local storage = require("storage")',
-              'local panel_handle, io_handle, width, height, panel_if = bm.get_display_lcd_params("display_lcd")',
-              'assert(storage.exists("/fonts/UploadedSmoke.ttf"), "uploaded font path missing")',
-              'display.init(panel_handle, io_handle, width, height, panel_if)',
-              'display.begin_frame({ clear = true, color = "black" })',
-              'display.fill_round_rect(180, 180, width - 360, 96, 12, "#1d4ed8")',
-              'display.draw_text_aligned(0, 0, width, height, "uploaded lua + fs ok", { color = "white", font_size = 24, align = "center", valign = "middle" })',
-              'display.present()',
-              'display.end_frame()',
-              'display.deinit()',
-              'print("uploaded smoke PASS")',
-            ].join("\n");
-            window.espClawSim.mountText("/fonts/UploadedSmoke.ttf", "fake-font-bytes");
-            const path = window.espClawSim.mountScript("upload_smoke.lua", script);
-            await window.espClawSim.runPath(path, true);
-          };
           document.getElementById("runButton").addEventListener("click", run);
           document.getElementById("stopButton").addEventListener("click", () => window.espClawSim.stop());
           document.getElementById("luaUploadButton").addEventListener("click", () => {
@@ -1006,11 +999,8 @@
           });
           const shellParams = new URLSearchParams(window.location.search);
           if (shellParams.get("embedded") === "1") {
+            document.body.classList.add("embedded");
             window.parent && window.parent.postMessage({ type: "esp-claw-sim:ready" }, "*");
-          } else if (shellParams.get("selftest") === "upload") {
-            runUploadSelfTest();
-          } else {
-            run();
           }
         }
       };

@@ -10,6 +10,24 @@ const REPOS: Record<string, RepoConfig> = {
   },
 }
 
+function normalizeBaseUrl(value: string): string {
+  return value.replace(/\/+$/, '')
+}
+
+function getSkillsLabSiteRoot(webBase: string): string {
+  const normalized = normalizeBaseUrl(webBase)
+  if (/\/skill$/i.test(normalized)) {
+    throw new Error(
+      'VITE_SKILLS_LAB_WEB_BASE must be the Skills Lab site root, for example https://skills-lab.esp-claw.com, not a /skill route.',
+    )
+  }
+  return normalized
+}
+
+function buildSkillsLabSkillUrl(webBase: string, skillId: string): string {
+  return `${getSkillsLabSiteRoot(webBase)}/skill/${encodeURIComponent(skillId)}`
+}
+
 export function getRepoConfig(id: string): RepoConfig {
   const config = REPOS[id]
   if (!config) {
@@ -36,11 +54,10 @@ export function buildWebUrl(params: SimulatorParams, relativePath: string): stri
   const path = relativePath.replace(/^\/+/, '')
   if (repo.kind === 'skillsLabRaw') {
     const match = path.match(/^skills\/([^/]+)\/(.+)$/)
-    return match
-      ? `${repo.webBase.replace(/\/+$/, '')}/skill/${encodeURIComponent(match[1])}`
-      : repo.webBase
+    const webBase = getSkillsLabSiteRoot(repo.webBase)
+    return match ? buildSkillsLabSkillUrl(webBase, match[1]) : webBase
   }
-  return `${repo.webBase}/${encodeURIComponent(params.ref)}/${path}`
+  return `${normalizeBaseUrl(repo.webBase)}/${encodeURIComponent(params.ref)}/${path}`
 }
 
 export async function fetchText(params: SimulatorParams, relativePath: string): Promise<string> {

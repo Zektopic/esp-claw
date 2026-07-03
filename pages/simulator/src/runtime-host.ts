@@ -5,15 +5,23 @@ export class RuntimeHost {
   private ready = false
   private pendingSkill: LoadedSkill | null = null
   private runtimeUrl = './runtime/esp_claw_sim.html?embedded=1'
+  private onEvent?: (message: string, kind?: 'info' | 'error') => void
 
-  constructor(iframe: HTMLIFrameElement) {
+  constructor(iframe: HTMLIFrameElement, onEvent?: (message: string, kind?: 'info' | 'error') => void) {
     this.iframe = iframe
+    this.onEvent = onEvent
     window.addEventListener('message', (event) => {
       if (event.source !== this.iframe.contentWindow) return
       const data = event.data as { type?: string }
       if (data?.type === 'esp-claw-sim:ready') {
         this.ready = true
+        this.onEvent?.('runtime ready')
         if (this.pendingSkill) this.run(this.pendingSkill)
+      } else if (data?.type === 'esp-claw-sim:mounted') {
+        this.onEvent?.('skill files mounted')
+      } else if (data?.type === 'esp-claw-sim:error') {
+        const detail = data as { error?: string }
+        this.onEvent?.(detail.error || 'runtime error', 'error')
       }
     })
   }
@@ -22,18 +30,22 @@ export class RuntimeHost {
     this.ready = false
     await this.assertRuntimeAvailable()
     this.iframe.src = this.runtimeUrl
+    this.onEvent?.('runtime frame loaded')
   }
 
   run(skill: LoadedSkill): void {
     this.pendingSkill = skill
     if (!this.ready) {
+      this.onEvent?.('waiting for runtime')
       return
     }
+    this.onEvent?.(`running ${skill.entry}`)
     this.postMountAndRun(skill)
   }
 
   stop(): void {
     this.iframe.contentWindow?.postMessage({ type: 'esp-claw-sim:stop' }, '*')
+    this.onEvent?.('stop requested')
   }
 
   private postMountAndRun(skill: LoadedSkill): void {

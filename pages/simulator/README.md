@@ -8,7 +8,13 @@ Supported URL shape:
 /?repo=skills-lab&ref=main&skill=skills/flappybird/SKILL.md
 ```
 
-The page downloads `SKILL.md`, requires `metadata.category` to contain `ui`, reads the `## Files` section, downloads those files, and sends a `mountSkill` / `runSkill` message to the embedded WASM runtime.
+The page downloads `SKILL.md`, requires `metadata.category` to contain `ui`, reads `simulator.entry` and `simulator.files`, downloads those files, and sends a `mountSkill` / `runSkill` message to the embedded WASM runtime.
+
+`VITE_SKILLS_LAB_WEB_BASE` must be the Skills Lab site root, not a detail route:
+
+```text
+VITE_SKILLS_LAB_WEB_BASE=https://skills-lab.esp-claw.com
+```
 
 The CI build copies generated simulator runtime files into `public/runtime/` before building:
 
