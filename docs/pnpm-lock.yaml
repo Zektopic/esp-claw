@@ -36,8 +36,8 @@ importers:
         specifier: ^0.11.11
         version: 0.11.11(@astrojs/starlight@0.39.3(astro@6.4.4(@types/node@24.12.4)(rollup@4.60.4)(tsx@4.22.4)(yaml@2.9.0))(typescript@6.0.3))(typescript@6.0.3)
       tasmota-webserial-esptool:
-        specifier: ^9.2.23
-        version: 9.2.23
+        specifier: github:laride/WebSerial_ESPTool#build/support-p4-rev3_2
+        version: https://codeload.github.com/laride/WebSerial_ESPTool/tar.gz/4e567ff6ba124f13e93a867c0c62a9b9ef820c8c
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -2053,8 +2053,9 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  tasmota-webserial-esptool@9.2.23:
-    resolution: {integrity: sha512-q1NnAY/9iLBi+IDxk7EVp/mxXX12Ud2UBFKBEZ4CUvOGKgojwr3O/X4hmvivTZP2T4/8mlLt04pgWrOQ86RejQ==}
+  tasmota-webserial-esptool@https://codeload.github.com/laride/WebSerial_ESPTool/tar.gz/4e567ff6ba124f13e93a867c0c62a9b9ef820c8c:
+    resolution: {gitHosted: true, integrity: sha512-yOU5/WacsCI69zf0JcxkWfpNZobWEyJ12y2tCiSQVHQVQAPnuc5N4Taatka1FgvcL/PbPkBcBvNStJANay+Grg==, tarball: https://codeload.github.com/laride/WebSerial_ESPTool/tar.gz/4e567ff6ba124f13e93a867c0c62a9b9ef820c8c}
+    version: 9.2.23-p4
 
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
@@ -4976,7 +4977,7 @@ snapshots:
       picocolors: 1.1.1
       sax: 1.6.0
 
-  tasmota-webserial-esptool@9.2.23:
+  tasmota-webserial-esptool@https://codeload.github.com/laride/WebSerial_ESPTool/tar.gz/4e567ff6ba124f13e93a867c0c62a9b9ef820c8c:
     dependencies:
       pako: 2.1.0
       tslib: 2.8.1

@@ -21,7 +21,7 @@
     "lean-qr": "^2.7.1",
     "sharp": "^0.34.2",
     "starlight-theme-nova": "^0.11.11",
-    "tasmota-webserial-esptool": "^9.2.23",
+    "tasmota-webserial-esptool": "github:laride/WebSerial_ESPTool#build/support-p4-rev3_2",
     "typescript": "^6.0.3"
   },
   "devDependencies": {
