@@ -12,15 +12,15 @@
     "generate-firmware-json": "node ./tools/generate-firmware-json.ts"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.9",
+    "@astrojs/check": "^0.9.12",
     "@astrojs/markdown-satteri": "^0.3.3",
     "@astrojs/starlight": "^0.41.3",
     "@lucide/astro": "^1.23.0",
-    "astro": "^7.0.7",
+    "astro": "^7.4.12",
     "astro-d2": "^0.13.0",
     "lean-qr": "^2.7.2",
     "satteri": "^0.9.5",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.5",
     "starlight-theme-nova": "^0.12.1",
     "tasmota-webserial-esptool": "github:laride/WebSerial_ESPTool#build/support-p4-rev3_2",
     "typescript": "^6.0.3"
@@ -28,6 +28,21 @@
   "devDependencies": {
     "@types/w3c-web-serial": "^1.0.8",
     "tsx": "^4.23.0"
+  },
+  "overrides": {
+    "devalue": "^5.9.3",
+    "esbuild": "^0.28.1",
+    "fast-uri": "^3.1.9",
+    "js-yaml": "^4.3.2",
+    "nanoid": "^3.3.20",
+    "postcss": "^8.5.33",
+    "postcss-selector-parser": "^6.1.5",
+    "smol-toml": "^1.9.0",
+    "source-map-js": "^1.2.2",
+    "svgo": "^4.1.0",
+    "vite": "^8.3.8",
+    "yaml": "^2.8.3",
+    "zod": "^4.6.6"
   },
   "packageManager": "pnpm@11.5.0"
 }
